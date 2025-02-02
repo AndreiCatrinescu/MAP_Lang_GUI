@@ -29,7 +29,7 @@ public class ProgramState {
         try {
             return currentStatement.execute(this);
         } catch (InterpreterError e) {
-            exeStack.push(currentStatement);
+            exeStack.clear();
             throw e;
         }
     }

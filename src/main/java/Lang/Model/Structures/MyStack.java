@@ -7,4 +7,5 @@ public interface MyStack<T> {
     void push(T v);
     boolean isEmpty();
     Stack<T> getContent();
+    void clear();
 }

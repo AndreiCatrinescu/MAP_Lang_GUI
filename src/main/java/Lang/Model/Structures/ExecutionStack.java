@@ -30,6 +30,11 @@ public class ExecutionStack<T> implements MyStack<T> {
     }
 
     @Override
+    public void clear() {
+        stack.clear();
+    }
+
+    @Override
     public String toString() {
         if (stack.isEmpty())
             return "";

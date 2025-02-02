@@ -22,7 +22,6 @@ import javafx.stage.Stage;
 
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.stream.Collectors;
 
 
 public class InterpreterGUI extends Application {
@@ -138,7 +137,7 @@ public class InterpreterGUI extends Application {
         Label symTableLabel = new Label("Variables");
         Label exeStackLabel = new Label("Execution Stack");
 
-        Button executeButton = new Button("Step");
+        Button executeButton = new Button("One Step");
         executeButton.setMinSize(100, 45);
 
         Button backButton = new Button("New Program");

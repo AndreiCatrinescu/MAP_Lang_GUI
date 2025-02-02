@@ -1,5 +1,6 @@
 package Lang.View;
 
+import Lang.Exceptions.AllocationError;
 import Lang.Model.Expressions.*;
 import Lang.Model.Statements.*;
 import Lang.Model.Types.BoolType;
@@ -62,6 +63,58 @@ public class Examples {
         ex9 = combine(whileV, assignA);
         ex9 = combine(assignV, ex9);
         ex9 = combine(declareV, ex9);
+        return ex9;
+    }
+
+    static Statement example9 () {
+        /*
+        int *a;
+        int v;
+        new (a, 10);
+        fork{
+            v = 20;
+            fork {
+                *a = 40;
+                print(*a);
+            }
+            print(v);
+         }
+         v = 30;
+         print(v);
+         print(*a);
+         */
+        Statement declA = new DeclarationStatement("a", new ReferenceType(new IntType()));
+        Statement declV = new DeclarationStatement("v", new IntType());
+        Statement allocA = new NewStatement("a", new LiteralExp(new IntValue(10)));
+
+        // fork2
+        Statement fork2Body = new CompStatement(
+                new DerefAssignStatement(
+                        "a",
+                        new LiteralExp(
+                                new IntValue(40))),
+                new PrintStatement(new DerefExp(new VariableExp("a"))));
+
+        Statement fork2 = new ThreadStatement(fork2Body);
+
+        // fork1
+        Statement fork1 = new ThreadStatement(new CompStatement(new AssignStatement("v", new LiteralExp(new IntValue(20))),
+                new CompStatement(fork2, new PrintStatement(new VariableExp("v")))));
+
+        Statement assignV = new AssignStatement("v", new LiteralExp(new IntValue(30)));
+
+        Statement printV = new PrintStatement(new VariableExp("v"));
+
+        Statement printA = new PrintStatement(new DerefExp(new VariableExp("a")));
+
+        Statement ex9;
+        ex9 = combine(printV, printA);
+        ex9 = combine(assignV, ex9);
+        ex9 = combine(fork1, ex9);
+        ex9 = combine(allocA, ex9);
+        ex9 = combine(declV, ex9);
+        ex9 = combine(declA, ex9);
+
         return ex9;
     }
 
@@ -335,6 +388,7 @@ public class Examples {
         exampleList.add(example6());
         exampleList.add(example7());
         exampleList.add(example8());
+        exampleList.add(example9());
         exampleList.add(exampleError1());
         exampleList.add(exampleError2());
         exampleList.add(exampleError3());
