@@ -1,15 +1,13 @@
 package Lang.View;
 
+import Lang.Controller.UIController;
 import Lang.Exceptions.InterpreterError;
 import Lang.Model.Statements.Statement;
-import Lang.Model.Structures.ProgramState;
 import Lang.Model.Values.Value;
 import javafx.application.Application;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.collections.ObservableListBase;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -21,110 +19,23 @@ import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 
 import java.util.Map;
-import java.util.NoSuchElementException;
 
 
 public class InterpreterGUI extends Application {
     private Stage appStage;
-    private RunExample currentCommand;
-    private int currentId;
+    private UIController controller;
 
-    private ObservableList<String> updateOut() {
-        try {
-            var out = currentCommand.getProgramStates().getFirst().getOut().getAll();
-            var updateContent = FXCollections.<String>observableArrayList();
-            for (var o : out) {
-                updateContent.add(o.toString());
-            }
-            return updateContent;
-        } catch (Exception e) {
-            return FXCollections.observableArrayList();
-        }
-    }
-
-    private ObservableList<Integer> updateStatesList() {
-        var states = currentCommand.getProgramStates();
-        var updateContent = FXCollections.<Integer>observableArrayList();
-        for (var s : states) {
-            updateContent.add(s.getId());
-        }
-        return updateContent;
-    }
-
-    private ObservableList<String> updateFileTable() {
-        try {
-            var files = currentCommand.getProgramStates().getFirst().getFileTable().getContent();
-            var updateContent = FXCollections.<String>observableArrayList();
-            for (var f : files.keySet()) {
-                updateContent.add(f.toString());
-            }
-            return updateContent;
-        } catch (Exception e) {
-            return FXCollections.observableArrayList();
-        }
-    }
-
-    private ObservableList<Map.Entry<Integer, Value>> updateHeap() {
-        try {
-            var heap = currentCommand.getProgramStates().getFirst().getHeap().getContent();
-            var updateContent = FXCollections.<Map.Entry<Integer, Value>>observableArrayList();
-            updateContent.addAll(heap.entrySet());
-            return updateContent;
-        } catch (Exception e) {
-            return FXCollections.observableArrayList();
-        }
-    }
-
-    private ObservableList<Map.Entry<String, Value>> updateSymTable() {
-        ProgramState state;
-        try {
-            state = currentCommand.getProgramStates()
-                    .stream()
-                    .filter(s -> s.getId() == currentId).toList().getFirst();
-        } catch (NoSuchElementException e) {
-            try {
-                currentId = currentCommand.getProgramStates().getFirst().getId();
-                state = currentCommand.getProgramStates().get(currentId);
-            } catch (Exception e2) {
-                return FXCollections.observableArrayList();
-            }
-        }
-
-        var sym = state.getSymTable().getContent();
-
-        var updateContent = FXCollections.<Map.Entry<String, Value>>observableArrayList();
-        updateContent.addAll(sym.entrySet());
-
-        return updateContent;
-    }
-
-    private ObservableList<String> updateExeStack() {
-        ProgramState state;
-        try {
-            state = currentCommand.getProgramStates()
-                    .stream()
-                    .filter(s -> s.getId() == currentId).toList().getFirst();
-        } catch (NoSuchElementException e) {
-            try {
-                currentId = currentCommand.getProgramStates().getFirst().getId();
-                state = currentCommand.getProgramStates().get(currentId);
-            } catch (Exception e2) {
-                return FXCollections.observableArrayList();
-            }
-        }
-
-        var exe = state.getExeStack().getContent();
-
-        var updateContent = FXCollections.<String>observableArrayList();
-        for (var e : exe.reversed()) {
-            updateContent.add(e.toString());
-        }
-
-        return updateContent;
+    public void showCompilationError(String content) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Compilation Error");
+        alert.setHeaderText("The program could not compile because of the following error:");
+        alert.setContentText(content);
+        alert.setGraphic(null);
+        alert.showAndWait();
     }
 
     private Scene executionScreen() {
-        currentId = 0;
+        controller.setCurrentId(0);
         GridPane root = new GridPane();
         root.setHgap(10);
         root.setVgap(10);
@@ -203,26 +114,25 @@ public class InterpreterGUI extends Application {
         symTable.getColumns().add(varValueColumn);
         symTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
-        outList.setItems(updateOut());
-        fileTable.setItems(updateFileTable());
-        programStateIds.setItems(updateStatesList());
-        programStateCount.setText("" + updateStatesList().size());
-        heapTable.setItems(updateHeap());
-        symTable.setItems(updateSymTable());
-        exeStackList.setItems(updateExeStack());
+        outList.setItems(controller.getOutContent());
+        fileTable.setItems(controller.getFileTableContent());
+        programStateIds.setItems(controller.getStatesListContent());
+        programStateCount.setText("" + controller.getStatesListContent().size());
+        heapTable.setItems(controller.getHeapContent());
+        symTable.setItems(controller.getSymTableContent());
+        exeStackList.setItems(controller.getExeStackContent());
 
         executeButton.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
-                currentCommand.executeOne();
-                outList.setItems(updateOut());
-                fileTable.setItems(updateFileTable());
-                heapTable.setItems(updateHeap());
-                currentCommand.removeCompletedThreads();
-                exeStackList.setItems(updateExeStack());
-                programStateIds.setItems(updateStatesList());
-                programStateCount.setText("" + updateStatesList().size());
-                symTable.setItems(updateSymTable());
+                controller.executeCommand();
+                outList.setItems(controller.getOutContent());
+                fileTable.setItems(controller.getFileTableContent());
+                heapTable.setItems(controller.getHeapContent());
+                exeStackList.setItems(controller.getExeStackContent());
+                programStateIds.setItems(controller.getStatesListContent());
+                programStateCount.setText("" + controller.getStatesListContent().size());
+                symTable.setItems(controller.getSymTableContent());
                 fileTable.refresh();
                 programStateIds.refresh();
                 heapTable.refresh();
@@ -236,14 +146,14 @@ public class InterpreterGUI extends Application {
             @Override
             public void changed(ObservableValue<? extends Integer> observable, Integer oldValue, Integer newValue) {
                 if (newValue != null)
-                    currentId = newValue;
+                    controller.setCurrentId(newValue);
                 else {
-                    currentId = oldValue;
+                    controller.setCurrentId(oldValue);
                 }
 //                System.out.println(currentId);
-                symTable.setItems(updateSymTable());
+                symTable.setItems(controller.getSymTableContent());
                 symTable.refresh();
-                exeStackList.setItems(updateExeStack());
+                exeStackList.setItems(controller.getExeStackContent());
                 exeStackList.refresh();
             }
         });
@@ -299,15 +209,14 @@ public class InterpreterGUI extends Application {
                     @Override
                     public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
                         Statement program = Examples.getAllExamples().get(newValue.intValue());
-                        RunExample command = new RunExample(newValue.toString(), "", program);
                         try {
-                            command.typecheck();
+                            RunExample command = new RunExample(newValue.toString(), "", program);
+                            command.setLogFile("log_program" + newValue + ".txt");
+                            controller.setCurrentCommand(command);
                         } catch (InterpreterError e) {
-                            System.out.println(e.getMessage());
+                            showCompilationError(e.getMessage());
                             return;
                         }
-                        command.setLogFile("log_program" + newValue + ".txt");
-                        currentCommand = command;
                         appStage.setScene(executionScreen());
                     }
                 }
@@ -322,6 +231,7 @@ public class InterpreterGUI extends Application {
         stage.setScene(programChoiceScene());
         stage.show();
         appStage = stage;
+        controller = new UIController();
     }
 
     public static void main(String[] args) {

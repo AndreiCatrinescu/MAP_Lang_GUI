@@ -38,14 +38,10 @@ public class RunExample extends Command {
         return new Controller(repo);
     }
 
-    public RunExample(String key, String desc, Statement stmt) {
+    public RunExample(String key, String desc, Statement stmt) throws InterpreterError {
         super(key, desc);
         statement = stmt;
-        try {
-            controller = makeController(stmt);
-        } catch (InterpreterError _) {
-
-        }
+        controller = makeController(statement);
     }
 
     @Override
@@ -61,7 +57,7 @@ public class RunExample extends Command {
 
     public void executeOne() {
         try {
-            if (!controller.oneStep()) {
+            if (controller == null || !controller.oneStep()) {
                 controller = makeController(statement);
                 controller.setRepoLogFile(logFile);
             }
@@ -77,6 +73,5 @@ public class RunExample extends Command {
     @Override
     public void setLogFile(String file) {
         logFile = file;
-        controller.setRepoLogFile(logFile);
     }
 }
